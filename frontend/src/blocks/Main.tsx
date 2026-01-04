@@ -5,8 +5,11 @@ import {
   MapPin,
   CalendarDays,
   Loader,
+  CircleCheckBig,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { useBookingStore } from "../store/authStore";
 
 const locations = ["CBD", "Kiamunyi", "58", "Naka"];
@@ -27,10 +30,7 @@ const cbdRoomPrices: Record<string, number> = {
 
 const staggerContainer = {
   hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.2 },
-  },
+  show: { opacity: 1, transition: { staggerChildren: 0.2 } },
 };
 
 const fadeInUp = {
@@ -38,45 +38,43 @@ const fadeInUp = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
-const toLocalDate = (date: string) =>
-  new Date(date).toLocaleDateString(undefined, {
+const toLocalDate = (date: Date) =>
+  date.toLocaleDateString(undefined, {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
+const formatCurrency = (amount: number) => amount.toLocaleString("en-KE");
 
 function Main() {
   const { submitBooking } = useBookingStore();
 
   const [location, setLocation] = useState<string | null>(null);
   const [room, setRoom] = useState<string | null>(null);
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
-  const [showCheckIn, setShowCheckIn] = useState(false);
-  const [showCheckOut, setShowCheckOut] = useState(false);
+  const [checkIn, setCheckIn] = useState<Date | null>(null);
+  const [checkOut, setCheckOut] = useState<Date | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
 
   const isCBD = location === "CBD";
   const roomOptions = isCBD
     ? Object.keys(cbdRoomPrices)
     : Object.keys(defaultRoomPrices);
+
   const nightlyAmount = room
     ? isCBD
       ? cbdRoomPrices[room]
       : defaultRoomPrices[room]
     : 0;
 
-  const today = new Date().toISOString().split("T")[0];
-  const isDateBooked = (date: string) => bookedDates.includes(date);
+  const bookedDateObjects = bookedDates.map((d) => new Date(d));
 
   const nights =
     checkIn && checkOut
       ? Math.floor(
-          (new Date(checkOut).getTime() - new Date(checkIn).getTime()) /
-            (1000 * 60 * 60 * 24)
+          (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)
         )
       : 0;
 
@@ -95,15 +93,17 @@ function Main() {
   const handleConfirmBooking = async () => {
     setShowConfirmModal(false);
     setLoading(true);
+
     await submitBooking({
       location: location!,
       room: room!,
-      checkIn,
-      checkOut,
+      checkIn: checkIn!.toISOString(),
+      checkOut: checkOut!.toISOString(),
       nights,
       amount: totalAmount,
       phoneNumber,
     });
+
     setLoading(false);
     setShowSuccessModal(true);
   };
@@ -127,64 +127,51 @@ function Main() {
           <div className="d-flex gap-3 align-items-center flex-wrap">
             {/* LOCATION */}
             <motion.div variants={fadeInUp}>
-              <div className="d-flex align-items-center gap-1 mb-1">
-                <MapPin size={18} color="#999" />
-                <small className="text-muted">Location</small>
-              </div>
+              <small className="text-muted d-flex align-items-center gap-1 mb-1">
+                <MapPin size={18} /> Location
+              </small>
               <select
-                className="form-select border-0 pe-5 ps-2 py-1"
+                className="form-select border-0"
                 value={location ?? ""}
                 onChange={(e) => {
                   setLocation(e.target.value || null);
                   setRoom(null);
-                  setCheckIn("");
-                  setCheckOut("");
+                  setCheckIn(null);
+                  setCheckOut(null);
                 }}
               >
                 <option value="">Select</option>
                 {locations.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc}
-                  </option>
+                  <option key={loc}>{loc}</option>
                 ))}
               </select>
             </motion.div>
 
             {/* ROOMS */}
-            <motion.div
-              variants={fadeInUp}
-              style={{ borderLeft: "1px solid #ddd", paddingLeft: 12 }}
-            >
-              <div className="d-flex align-items-center gap-1 mb-1">
-                <HousePlus size={18} color="#999" />
-                <small className="text-muted">Rooms</small>
-              </div>
+            <motion.div variants={fadeInUp} style={{ paddingLeft: 12 }}>
+              <small className="text-muted d-flex align-items-center gap-1 mb-1">
+                <HousePlus size={18} /> Rooms
+              </small>
               <select
-                className="form-select border-0 pe-5 ps-2 py-1"
+                className="form-select border-0"
                 value={room ?? ""}
-                onChange={(e) => setRoom(e.target.value || null)}
                 disabled={!location}
+                onChange={(e) => setRoom(e.target.value || null)}
               >
                 <option value="">Select</option>
-                {roomOptions.map((roomType) => (
-                  <option key={roomType} value={roomType}>
-                    {roomType}
-                  </option>
+                {roomOptions.map((r) => (
+                  <option key={r}>{r}</option>
                 ))}
               </select>
             </motion.div>
 
             {/* AMOUNT */}
-            <motion.div
-              variants={fadeInUp}
-              style={{ borderLeft: "1px solid #ddd", paddingLeft: 12 }}
-            >
-              <div className="d-flex align-items-center gap-1 mb-1">
-                <CreditCard size={18} color="#999" />
-                <small className="text-muted">Amount</small>
-              </div>
+            <motion.div variants={fadeInUp} style={{ paddingLeft: 12 }}>
+              <small className="text-muted d-flex align-items-center gap-1 mb-1">
+                <CreditCard size={18} /> Amount
+              </small>
               <input
-                className="form-control border-0 ps-3 py-1"
+                className="form-control border-0"
                 value={nightlyAmount || ""}
                 disabled
               />
@@ -192,71 +179,57 @@ function Main() {
           </div>
 
           {/* DATES */}
-          <div className="d-flex gap-2 flex-wrap align-items-start mx-auto">
+          <div className="d-flex gap-2 justify-content-center flex-wrap">
             <motion.div variants={fadeInUp}>
-              <button
-                className="btn btn-dark d-flex align-items-center gap-2"
-                onClick={() => {
-                  setShowCheckIn(!showCheckIn);
-                  setShowCheckOut(false);
+              <DatePicker
+                selected={checkIn}
+                onChange={(date: Date | null) => {
+                  setCheckIn(date);
+                  setCheckOut(null);
                 }}
-              >
-                <CalendarDays size={18} />
-                {checkIn ? `Check In: ${toLocalDate(checkIn)}` : "Check In"}
-              </button>
-              {showCheckIn && (
-                <input
-                  type="date"
-                  className="form-control mt-1"
-                  min={today}
-                  value={checkIn}
-                  onChange={(e) => {
-                    if (!isDateBooked(e.target.value)) {
-                      setCheckIn(e.target.value);
-                      setCheckOut("");
-                    }
-                  }}
-                />
-              )}
+                minDate={new Date()}
+                excludeDates={bookedDateObjects}
+                placeholderText="Check In"
+                customInput={
+                  <button className="btn btn-dark d-flex gap-2 align-items-center">
+                    <CalendarDays size={18} />
+                    {checkIn ? `Check In: ${toLocalDate(checkIn)}` : "Check In"}
+                  </button>
+                }
+              />
             </motion.div>
 
             <motion.div variants={fadeInUp}>
-              <button
-                className="btn btn-dark d-flex align-items-center gap-2"
+              <DatePicker
+                selected={checkOut}
+                onChange={(date: Date | null) => setCheckOut(date)}
+                minDate={checkIn ?? new Date()}
+                excludeDates={bookedDateObjects}
                 disabled={!checkIn}
-                onClick={() => {
-                  setShowCheckOut(!showCheckOut);
-                  setShowCheckIn(false);
-                }}
-              >
-                <CalendarDays size={18} />
-                {checkOut ? `Check Out: ${toLocalDate(checkOut)}` : "Check Out"}
-              </button>
-              {showCheckOut && (
-                <input
-                  type="date"
-                  className="form-control mt-1"
-                  min={checkIn}
-                  value={checkOut}
-                  onChange={(e) => {
-                    if (!isDateBooked(e.target.value)) {
-                      setCheckOut(e.target.value);
-                    }
-                  }}
-                />
-              )}
+                placeholderText="Check Out"
+                customInput={
+                  <button
+                    className="btn btn-dark d-flex gap-2 align-items-center"
+                    disabled={!checkIn}
+                  >
+                    <CalendarDays size={18} />
+                    {checkOut
+                      ? `Check Out: ${toLocalDate(checkOut)}`
+                      : "Check Out"}
+                  </button>
+                }
+              />
             </motion.div>
           </div>
 
           {/* PHONE */}
-          <motion.div variants={fadeInUp} className="mt-4">
+          <motion.div variants={fadeInUp} className="mt-3">
             <input
               type="text"
               className="form-control"
               value={phoneNumber}
               onChange={handlePhoneNumberChange}
-              placeholder="Enter your phone number eg. 07... or 01..."
-              required
+              placeholder="Enter your phone number eg. 07..."
             />
           </motion.div>
 
@@ -276,7 +249,7 @@ function Main() {
               onClick={handleContinue}
             >
               {loading ? (
-                <Loader className="animate-spin-loader" size={24} />
+                <Loader className="animate-spin-loader" />
               ) : (
                 "Continue"
               )}
@@ -289,14 +262,14 @@ function Main() {
       {showConfirmModal && (
         <div
           className="modal fade show d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          style={{ background: "rgba(0,0,0,.5)" }}
         >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Confirm Your Booking</h5>
               </div>
-              <div className="modal-body text-start">
+              <div className="modal-body text-center">
                 <p>
                   Location: <strong>{location}</strong>
                 </p>
@@ -304,25 +277,25 @@ function Main() {
                   Room: <strong>{room}</strong>
                 </p>
                 <p>
-                  Check In: <strong>{toLocalDate(checkIn)}</strong>
+                  Check In: <strong>{toLocalDate(checkIn!)}</strong>
                 </p>
                 <p>
-                  Check Out: <strong>{toLocalDate(checkOut)}</strong>
+                  Check Out: <strong>{toLocalDate(checkOut!)}</strong>
                 </p>
                 <p>
                   Nights: <strong>{nights}</strong>
                 </p>
                 <p>
-                  Total Amount: KES <strong>{totalAmount}</strong>
+                  Total: <strong>KES {formatCurrency(totalAmount)}</strong>
                 </p>
                 <p>
-                  Phone Number: <strong>{phoneNumber}</strong>
+                  Phone: <strong>{phoneNumber}</strong>
                 </p>
-                <hr className="w-75" />
+                <hr className="w-75 mx-auto" />
               </div>
-              <div className="modal-footer d-flex justify-content-between">
+              <div className="pb-2 px-4 d-flex justify-content-between">
                 <button
-                  className="btn btn-secondary"
+                  className="btn btn-dark"
                   onClick={() => setShowConfirmModal(false)}
                 >
                   Cancel
@@ -343,21 +316,21 @@ function Main() {
       {showSuccessModal && (
         <div
           className="modal fade show d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          style={{ background: "rgba(0,0,0,.5)" }}
         >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Booking Received</h5>
+                <CircleCheckBig size={26} className="text-primary ms-2" />
               </div>
               <div className="modal-body text-center">
                 <p>
                   Your booking is on the way. You will receive a call shortly.
                 </p>
-              </div>
-              <div className="modal-footer">
+                <hr className="w-75 mx-auto" />
                 <button
-                  className="btn btn-primary"
+                  className="btn btn-primary w-75"
                   onClick={handleCloseSuccess}
                 >
                   OK

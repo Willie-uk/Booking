@@ -18,6 +18,14 @@ export const bookingEmailTemplate = (data: BookingEmailData) => {
       })
     : "N/A";
 
+  const formatCurrency = (amount: number) => amount.toLocaleString("en-KE");
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString("en-KE", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -48,10 +56,10 @@ export const bookingEmailTemplate = (data: BookingEmailData) => {
 
       <p>Location: <strong>${data.location}</strong></p>
       <p>Room: <strong>${data.room}</strong></p>
-      <p>Check In: <strong>${data.checkIn}</strong></p>
-      <p>Check Out: <strong>${data.checkOut}</strong></p>
+      <p>Check In: <strong>${formatDate(data.checkIn)}</strong></p>
+      <p>Check Out: <strong>${formatDate(data.checkOut)}</strong></p>
       <p>Nights: <strong>${data.nights}</strong></p>
-      <p>Total: KES <strong>${data.amount}</strong></p>
+      <p>Total: KES <strong>${formatCurrency(data.amount)}</strong></p>
       <p>Phone Number: <strong>${data.phoneNumber}</strong></p>
       <p>Approval is <strong>${data.status}</strong></p>
       <p style="font-style: italic; color: gray">Received on <strong>${formattedDate}</strong></p>

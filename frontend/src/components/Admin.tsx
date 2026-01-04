@@ -20,6 +20,7 @@ const AdminDashboard: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
 
   const navigate = useNavigate();
+  const formatCurrency = (amount: number) => amount.toLocaleString("en-KE");
 
   // 🔐 Verify admin password
   const handleAdminVerify = async () => {
@@ -95,11 +96,12 @@ const AdminDashboard: React.FC = () => {
         />
 
         <button
-          className="btn btn-dark"
+          className="btn btn-dark w-100"
           onClick={handleAdminVerify}
+          style={{ maxWidth: "400px" }}
           disabled={verifying}
         >
-          {verifying ? "Verifying..." : "Verify"}
+          {verifying ? <Loader className="animate-spin" size={20} /> : "Verify"}
         </button>
 
         {verifyError && (
@@ -168,7 +170,7 @@ const AdminDashboard: React.FC = () => {
                     {new Date(b.checkOut).toDateString()}
                   </td>
                   <td>{b.nights}</td>
-                  <td>KES {b.amount}</td>
+                  <td>KES {formatCurrency(b.amount)}</td>
                   <td>{b.phoneNumber}</td>
                   <td>
                     <span className="badge bg-warning text-dark">
